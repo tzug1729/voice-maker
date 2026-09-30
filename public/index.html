@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>声をつくる | VOICEVOX読み上げ</title><link rel="stylesheet" href="/style.css"></head>
+<body><main class="shell">
+  <header><div class="brand">声をつくる<span class="dot">.</span></div><a class="admin-link" href="/admin.html">プリセット設定</a></header>
+  <section class="hero"><p class="eyebrow">VOICEVOX LOCAL STUDIO</p><h1>言葉に、<br><em>声</em>をあたえる。</h1><p class="lead">このPCのVOICEVOXで読み上げます。<br>できあがった音声はWAVで保存できます。</p></section>
+  <section class="card" aria-label="音声を作る"><div class="card-top"><span class="step">01 / CREATE</span><span class="pill">VOICEVOX</span></div>
+    <form id="form"><label for="preset">声・スタイル</label><div class="select-wrap"><select id="preset" required><option value="">読み込み中...</option></select></div>
+      <div class="label-row"><label for="text">読み上げる文章</label><span id="count">0 / 500</span></div>
+      <textarea id="text" maxlength="500" placeholder="ここに読み上げたい文章を入力してください。" required></textarea>
+      <div class="actions"><button id="generate" type="submit">音声をつくる <span aria-hidden="true">↗</span></button><p>1回500文字まで</p></div>
+    </form><p id="message" role="status" aria-live="polite"></p>
+    <div id="result" class="result" hidden><div class="result-head"><span>生成した音声</span><span class="wave" aria-hidden="true">▂▅▃▇▆▃▅▂</span></div><audio id="player" controls></audio><a id="download" class="download" download="voice.wav">WAVを保存 ↓</a></div>
+  </section>
+  <section class="credit-box"><p class="eyebrow">CREDIT &amp; TERMS</p><h2>クレジット</h2><p id="credit">声を選ぶと、必要なクレジットが表示されます。</p><a id="terms" href="https://voicevox.hiroshiba.jp/term/" target="_blank" rel="noopener noreferrer">音声ライブラリの利用規約 ↗</a><p class="fine">生成した音声を公開・配布する際は、選択した音声ライブラリの規約をご確認ください。</p></section>
+  <footer><span>Powered by VOICEVOX</span><a href="https://voicevox.hiroshiba.jp/term/" target="_blank" rel="noopener noreferrer">VOICEVOX利用規約</a></footer>
+</main><script type="module" src="/app.js"></script></body></html>

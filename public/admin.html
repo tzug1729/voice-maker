@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>プリセット設定 | 声をつくる</title><link rel="stylesheet" href="/style.css"></head>
+<body><main class="shell admin-shell">
+  <header><a class="brand" href="/" style="text-decoration:none;color:inherit">声をつくる<span class="dot">.</span></a><a class="admin-link" href="/">読み上げへ戻る</a></header>
+  <h1>プリセット設定</h1>
+  <p class="admin-intro">VOICEVOXに登録されている話者・スタイルと合成値を組み合わせて保存します。ここで新しい音声モデルを作ることはありません。「ヒナ」は元の話者と設定値が決まっていないため、入力して保存するまで利用できません。</p>
+  <section class="card admin-card">
+    <button class="secondary" id="connect">VOICEVOXから設定を読み込む</button>
+    <p id="status" class="admin-status" role="status" aria-live="polite">設定を読み込むにはVOICEVOXデスクトップアプリを起動してください。</p>
+    <div id="editor" hidden>
+      <div class="field"><label for="presetSelect">編集するプリセット</label><select id="presetSelect"></select></div>
+      <div class="actions"><button class="secondary" id="newPreset" type="button">新しいプリセット</button><button class="secondary" id="deletePreset" type="button">このプリセットを削除</button></div>
+      <form id="settings" hidden>
+        <div class="field"><label for="name">プリセット名</label><input id="name" maxlength="40" required placeholder="例: ヒナ"></div>
+        <div class="field"><label for="style">元の話者・スタイル</label><select id="style" required></select></div>
+        <div class="grid">
+          <div class="field"><label for="speedScale">話速</label><input id="speedScale" type="number" min="0.5" max="2" step="0.01" required></div>
+          <div class="field"><label for="pitchScale">高さ</label><input id="pitchScale" type="number" min="-0.15" max="0.15" step="0.01" required></div>
+          <div class="field"><label for="intonationScale">抑揚</label><input id="intonationScale" type="number" min="0" max="2" step="0.01" required></div>
+          <div class="field"><label for="volumeScale">音量</label><input id="volumeScale" type="number" min="0" max="2" step="0.01" required></div>
+          <div class="field"><label for="prePhonemeLength">前の無音（秒）</label><input id="prePhonemeLength" type="number" min="0" max="2" step="0.01" required></div>
+          <div class="field"><label for="postPhonemeLength">後の無音（秒）</label><input id="postPhonemeLength" type="number" min="0" max="2" step="0.01" required></div>
+        </div>
+        <div class="field"><label for="creditInput">クレジット表記</label><input id="creditInput" maxlength="160" placeholder="例: VOICEVOX:話者名"></div>
+        <div class="field"><label for="termsUrl">音声ライブラリの規約URL（任意）</label><input id="termsUrl" type="url" placeholder="https://..."></div>
+        <div class="field checkbox"><input id="enabled" type="checkbox"><label for="enabled" style="margin:0">読み上げ画面の選択肢に表示する</label></div>
+        <button class="primary" type="submit">設定を保存</button>
+      </form>
+    </div>
+  </section>
+</main><script type="module" src="/admin.js"></script></body></html>
