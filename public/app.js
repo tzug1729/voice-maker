@@ -1,12 +1,22 @@
 const $ = id => document.getElementById(id);
 let presets = [];
 let audioUrl;
+const parameterNames = ['speedScale', 'pitchScale', 'intonationScale', 'volumeScale', 'prePhonemeLength', 'postPhonemeLength'];
 
 function showError(message) { $('message').textContent = message; }
+function setParameters(preset) {
+  $('parameterPanel').hidden = !preset;
+  if (!preset) return;
+  for (const name of parameterNames) {
+    $(name).value = preset[name];
+    $(`${name}Value`).textContent = Number(preset[name]).toFixed(2);
+  }
+}
 function refreshCredit() {
   const preset = presets.find(item => item.id === $('preset').value);
   $('credit').textContent = preset?.credit || '声を選ぶと、必要なクレジットが表示されます。';
   $('terms').href = preset?.termsUrl || 'https://voicevox.hiroshiba.jp/term/';
+  setParameters(preset);
 }
 
 async function init() {
@@ -34,6 +44,12 @@ async function init() {
 }
 
 $('preset').addEventListener('change', refreshCredit);
+for (const name of parameterNames) {
+  $(name).addEventListener('input', () => { $(`${name}Value`).textContent = Number($(name).value).toFixed(2); });
+}
+$('resetParameters').addEventListener('click', () => {
+  setParameters(presets.find(item => item.id === $('preset').value));
+});
 $('text').addEventListener('input', () => { $('count').textContent = `${[...$('text').value].length} / 500`; });
 $('form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -46,7 +62,11 @@ $('form').addEventListener('submit', async event => {
   try {
     const response = await fetch('/api/synthesize', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, presetId: $('preset').value }),
+      body: JSON.stringify({
+        text,
+        presetId: $('preset').value,
+        parameters: Object.fromEntries(parameterNames.map(name => [name, Number($(name).value)])),
+      }),
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));

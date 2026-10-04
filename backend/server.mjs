@@ -121,9 +121,18 @@ async function handler(req, res) {
       }
       const preset = (await store.getPresets()).find(item => item.id === input.presetId && item.enabled && validPreset(item));
       if (!preset) { json(res, 400, { error: 'このプリセットは未設定か無効です。管理画面で設定して保存してください。' }); return; }
+      const parameters = input.parameters ?? {};
+      if (!parameters || typeof parameters !== 'object' || Array.isArray(parameters)) {
+        json(res, 400, { error: '読み上げパラメータの形式が正しくありません。' }); return;
+      }
+      for (const [key, [min, max]] of Object.entries(PARAMS)) {
+        if (Object.hasOwn(parameters, key) && (typeof parameters[key] !== 'number' || !Number.isFinite(parameters[key]) || parameters[key] < min || parameters[key] > max)) {
+          json(res, 400, { error: '読み上げパラメータが範囲外です。画面のスライダーを確認してください。' }); return;
+        }
+      }
       const queryResponse = await engine(`/audio_query?text=${encodeURIComponent(text.trim())}&speaker=${preset.styleId}`, { method: 'POST' });
       const query = await queryResponse.json();
-      for (const key of Object.keys(PARAMS)) query[key] = preset[key];
+      for (const key of Object.keys(PARAMS)) query[key] = Object.hasOwn(parameters, key) ? parameters[key] : preset[key];
       const audioResponse = await engine(`/synthesis?speaker=${preset.styleId}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(query),
       }, 90_000);
@@ -135,7 +144,7 @@ async function handler(req, res) {
     }
     const assets = new Map([
       ['/', 'index.html'], ['/index.html', 'index.html'], ['/app.js', 'app.js'], ['/admin.html', 'admin.html'],
-      ['/admin.js', 'admin.js'], ['/style.css', 'style.css'],
+      ['/admin.js', 'admin.js'], ['/style.css', 'style.css'], ['/parameters.css', 'parameters.css'],
     ]);
     if (req.method === 'GET' && assets.has(url.pathname)) {
       const name = assets.get(url.pathname);

@@ -1,0 +1,50 @@
+.parameter-panel {
+  margin-top: 28px;
+  padding-top: 23px;
+  border-top: 1px solid #e3ebe6;
+}
+.parameter-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.parameter-heading h2 {
+  margin: 0 0 5px;
+  font-size: 16px;
+}
+.parameter-heading p {
+  margin: 0;
+  color: #718079;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.parameter-heading .secondary {
+  flex: 0 0 auto;
+}
+.parameter-grid .control label {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.parameter-grid output {
+  float: right;
+  color: #188363;
+  font-variant-numeric: tabular-nums;
+}
+.parameter-grid input[type='range'] {
+  display: block;
+  width: 100%;
+  margin: 2px 0 15px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  accent-color: #23a57e;
+}
+@media (max-width: 650px) {
+  .parameter-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

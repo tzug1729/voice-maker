@@ -1,11 +1,22 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>声をつくる | VOICEVOX読み上げ</title><link rel="stylesheet" href="/style.css"></head>
+<title>声をつくる | VOICEVOX読み上げ</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/parameters.css"></head>
 <body><main class="shell">
   <header><div class="brand">声をつくる<span class="dot">.</span></div><a class="admin-link" href="/admin.html">プリセット設定</a></header>
   <section class="hero"><p class="eyebrow">VOICEVOX LOCAL STUDIO</p><h1>言葉に、<br><em>声</em>をあたえる。</h1><p class="lead">このPCのVOICEVOXで読み上げます。<br>できあがった音声はWAVで保存できます。</p></section>
   <section class="card" aria-label="音声を作る"><div class="card-top"><span class="step">01 / CREATE</span><span class="pill">VOICEVOX</span></div>
     <form id="form"><label for="preset">声・スタイル</label><div class="select-wrap"><select id="preset" required><option value="">読み込み中...</option></select></div>
+      <section id="parameterPanel" class="parameter-panel" hidden aria-labelledby="parameterTitle">
+        <div class="parameter-heading"><div><h2 id="parameterTitle">この読み上げの調整</h2><p>変更は今回の生成だけに使います。プリセットの保存値は変わりません。</p></div><button id="resetParameters" class="secondary" type="button">プリセットの値に戻す</button></div>
+        <div class="grid parameter-grid">
+          <div class="control"><label for="speedScale">話速 <output id="speedScaleValue"></output></label><input id="speedScale" type="range" min="0.5" max="2" step="0.01"></div>
+          <div class="control"><label for="pitchScale">高さ <output id="pitchScaleValue"></output></label><input id="pitchScale" type="range" min="-0.15" max="0.15" step="0.01"></div>
+          <div class="control"><label for="intonationScale">抑揚 <output id="intonationScaleValue"></output></label><input id="intonationScale" type="range" min="0" max="2" step="0.01"></div>
+          <div class="control"><label for="volumeScale">音量 <output id="volumeScaleValue"></output></label><input id="volumeScale" type="range" min="0" max="2" step="0.01"></div>
+          <div class="control"><label for="prePhonemeLength">前の無音（秒） <output id="prePhonemeLengthValue"></output></label><input id="prePhonemeLength" type="range" min="0" max="2" step="0.01"></div>
+          <div class="control"><label for="postPhonemeLength">後の無音（秒） <output id="postPhonemeLengthValue"></output></label><input id="postPhonemeLength" type="range" min="0" max="2" step="0.01"></div>
+        </div>
+      </section>
       <div class="label-row"><label for="text">読み上げる文章</label><span id="count">0 / 500</span></div>
       <textarea id="text" maxlength="500" placeholder="ここに読み上げたい文章を入力してください。" required></textarea>
       <div class="actions"><button id="generate" type="submit">音声をつくる <span aria-hidden="true">↗</span></button><p>1回500文字まで</p></div>
