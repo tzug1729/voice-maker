@@ -5,7 +5,7 @@
 - `backend/server.mjs` serves the local-only HTTP API and static application.
 - `backend/store.mjs` stores presets in the user's local application data folder.
 - `backend/core.mjs` validates presets and defines synthesis ranges.
-- `public/` contains the reading and preset settings screens.
+- `public/` contains the reading screen and its controls.
 - `test/` contains Node.js built-in test runner coverage using a mock VOICEVOX engine.
 - `起動.cmd` starts the app on Windows.
 

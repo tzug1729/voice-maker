@@ -17,8 +17,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .app-shell { width: min(820px, calc(100% - 36px)); margin: 0 auto; }
 .app-header { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dce1e5; }
 .app-header h1 { margin: 0; font-size: 19px; font-weight: 650; }
-.header-link { color: #3d6286; font-size: 14px; text-decoration: none; }
-.header-link:hover, footer a:hover, .download:hover { text-decoration: underline; }
+footer a:hover, .download:hover { text-decoration: underline; }
 main { padding: 24px 0 18px; }
 .panel { border: 1px solid #dfe4e8; border-radius: 16px; background: #fff; padding: 24px; box-shadow: 0 2px 7px #182b3d08; }
 .field { margin: 0 0 20px; }
@@ -36,7 +35,7 @@ textarea { display: block; min-height: 150px; resize: vertical; line-height: 1.6
 .secondary:hover { background: #f1f4f6; }
 button:disabled { opacity: .58; cursor: wait; }
 .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
-.form-actions span, .small, .fine { color: #687581; font-size: 12px; }
+.form-actions span, .fine { color: #687581; font-size: 12px; }
 #message { min-height: 0; margin: 12px 0 0; color: #455361; font-size: 13px; line-height: 1.6; }
 #message:empty { display: none; }
 .result { margin-top: 22px; padding-top: 20px; border-top: 1px solid #e1e5e8; }
@@ -49,19 +48,7 @@ audio { display: block; width: 100%; margin: 10px 0; }
 .credit-panel .fine { margin-top: 10px; }
 footer { display: flex; justify-content: space-between; gap: 12px; padding: 14px 2px 24px; color: #687581; font-size: 12px; }
 
-.admin-shell { width: min(760px, calc(100% - 36px)); margin: 0 auto; }
-.admin-shell h1 { margin: 24px 0 8px; font-size: 22px; }
-.admin-intro { margin: 0 0 18px; color: #56636e; font-size: 14px; line-height: 1.7; }
-.admin-card { margin: 0 0 28px; }
-.admin-card > .secondary { margin-bottom: 4px; }
-.admin-status { min-height: 20px; margin: 8px 0 16px; color: #455361; font-size: 13px; line-height: 1.6; }
-.admin-card .field { margin-top: 16px; }
-.admin-card .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
-.checkbox { display: flex; align-items: center; gap: 9px; }
-.checkbox input { width: auto; margin: 0; }
-.checkbox label { margin: 0; }
-.admin-card .primary { margin-top: 4px; }
 
 .save-dialog { width: min(420px, calc(100% - 32px)); border: 1px solid #d5dce2; border-radius: 16px; padding: 22px; box-shadow: 0 18px 60px #14253633; }
 .save-dialog::backdrop { background: #17243166; }
@@ -71,7 +58,7 @@ footer { display: flex; justify-content: space-between; gap: 12px; padding: 14px
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
 @media (max-width: 600px) {
-  .app-shell, .admin-shell { width: min(100% - 24px, 820px); }
+  .app-shell { width: min(100% - 24px, 820px); }
   .panel { padding: 18px; }
   .grid { grid-template-columns: 1fr; }
   .form-actions { align-items: flex-start; flex-direction: column; }

@@ -48,7 +48,7 @@ async function init() {
     if (!presets.length) {
       $('preset').replaceChildren(new Option('利用できるプリセットがありません', ''));
       $('generate').disabled = true;
-      showMessage('「プリセット設定」から利用するプリセットを設定してください。');
+      showMessage('有効なプリセットがありません。プリセットJSONを確認してください。');
     } else if (!health.ready) {
       showMessage(health.error);
     }
@@ -132,7 +132,7 @@ $('savePresetForm').addEventListener('submit', async event => {
   save.disabled = true;
   $('savePresetMessage').textContent = '保存中...';
   try {
-    await api('/api/admin/presets', {
+    await api('/api/presets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(preset),

@@ -1,14 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-
-const defaults = {
-  speedScale: 1,
-  pitchScale: 0,
-  intonationScale: 1,
-  volumeScale: 1,
-  prePhonemeLength: 0.1,
-  postPhonemeLength: 0.1,
-};
+import { validPreset } from './core.mjs';
 
 // This file is the version-controlled set of defaults distributed to new users.
 export const initialPresets = JSON.parse(await readFile(new URL('../presets.default.json', import.meta.url), 'utf8'));
@@ -31,36 +23,23 @@ export class FileStore {
     this.queue = next.catch(() => {});
     return next;
   }
-  async readPresets() {
-    const saved = await this.read('presets.json', initialPresets);
-    const presets = Array.isArray(saved) ? [...saved] : [];
-    let changed = !Array.isArray(saved);
-    const preset = initialPresets.find(item => item.id === 'hina');
-    if (preset) {
-      const index = presets.findIndex(item => item.id === preset.id);
-      const current = presets[index];
-      const configured = current && Number.isInteger(current.styleId)
-        && Object.keys(defaults).every(key => typeof current[key] === 'number' && Number.isFinite(current[key]))
-        && typeof current.enabled === 'boolean';
-      if (index < 0) { presets.push(preset); changed = true; }
-      else if (!configured) { presets[index] = preset; changed = true; }
-    }
-    if (changed) await this.write('presets.json', presets);
-    return presets;
+  async readUserPresets() {
+    const saved = await this.read('presets.json', []);
+    return Array.isArray(saved) ? saved : [];
   }
-  async getPresets() { return this.lock(() => this.readPresets()); }
+  mergePresets(userPresets) {
+    const localById = new Map(userPresets.filter(validPreset).map(preset => [preset.id, preset]));
+    const packagedIds = new Set(initialPresets.map(preset => preset.id));
+    const packaged = initialPresets.map(preset => localById.get(preset.id) || preset);
+    const personal = userPresets.filter(preset => validPreset(preset) && !packagedIds.has(preset.id));
+    return [...packaged, ...personal];
+  }
+  async getPresets() { return this.lock(async () => this.mergePresets(await this.readUserPresets())); }
   async savePreset(preset) { return this.lock(async () => {
-    const presets = await this.readPresets();
-    const next = presets.some(item => item.id === preset.id)
-      ? presets.map(item => item.id === preset.id ? preset : item)
-      : [...presets, preset];
+    const presets = await this.readUserPresets();
+    const next = [...presets.filter(item => item.id !== preset.id), preset];
     await this.write('presets.json', next);
-    return next;
-  }); }
-  async deletePreset(id) { return this.lock(async () => {
-    const next = (await this.readPresets()).filter(preset => preset.id !== id);
-    await this.write('presets.json', next);
-    return next;
+    return this.mergePresets(next);
   }); }
 }
 

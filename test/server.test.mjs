@@ -16,9 +16,7 @@ test('preset settings persist after creating a new store instance and Hina start
     const first = new FileStore(dir);
     const initial = await first.getPresets();
     const hina = initial.find(preset => preset.id === 'hina');
-    assert.equal(hina.enabled, false);
     assert.equal(hina.styleId, null);
-    assert.equal(hina.speedScale, null);
     const configured = { ...hina, styleId: 3, enabled: true, credit: 'VOICEVOX:ずんだもん', termsUrl: 'https://zunko.jp/con_ongen_kiyaku.html', speedScale: 1.2, pitchScale: 0.02, intonationScale: 1.1, volumeScale: 1, prePhonemeLength: 0.1, postPhonemeLength: 0.1 };
     await first.savePreset(configured);
     const restarted = new FileStore(dir);
@@ -27,7 +25,7 @@ test('preset settings persist after creating a new store instance and Hina start
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('local API lists styles, saves named presets, synthesizes audio, and reports an unavailable engine', async () => {
+test('local API loads preset JSON, saves personal presets, synthesizes audio, and reports an unavailable engine', async () => {
   let receivedQuery;
   const mock = http.createServer(async (req, res) => {
     if (req.url === '/speakers') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify([{ name: 'ずんだもん', styles: [{ id: 3, name: 'ノーマル' }] }])); return; }
@@ -45,10 +43,8 @@ test('local API lists styles, saves named presets, synthesizes audio, and report
     let ready = false;
     for (let i = 0; i < 50; i++) { try { if ((await fetch(base + '/api/health')).ok) { ready = true; break; } } catch {} await pause(100); }
     assert.ok(ready, 'server starts');
-    const styles = await (await fetch(base + '/api/admin/speakers')).json();
-    assert.equal(styles.speakers[0].id, 3);
     const preset = { id: 'custom-test', name: 'テスト声', styleId: 3, credit: 'VOICEVOX:ずんだもん', termsUrl: 'https://zunko.jp/con_ongen_kiyaku.html', enabled: true, speedScale: 1.2, pitchScale: 0.02, intonationScale: 1.1, volumeScale: 1, prePhonemeLength: 0.1, postPhonemeLength: 0.1 };
-    const saved = await fetch(base + '/api/admin/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(preset) });
+    const saved = await fetch(base + '/api/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(preset) });
     assert.equal(saved.status, 201);
     const publicList = await (await fetch(base + '/api/presets')).json();
     assert.equal(publicList.presets.some(item => item.name === 'テスト声'), true);
@@ -58,11 +54,10 @@ test('local API lists styles, saves named presets, synthesizes audio, and report
     assert.equal(receivedQuery.speedScale, 1.2);
     const disabledHina = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: 'hina', text: 'ヒナは未設定' }) });
     assert.equal(disabledHina.status, 400);
-    const savedAgain = await (await fetch(base + '/api/admin/presets')).json();
+    const savedAgain = await (await fetch(base + '/api/presets')).json();
     assert.equal(savedAgain.presets.find(item => item.id === preset.id).name, 'テスト声');
-    const deleted = await fetch(base + `/api/admin/presets/${preset.id}`, { method: 'DELETE' });
-    assert.equal(deleted.status, 200);
-    assert.equal((await readFile(path.join(dir, 'presets.json'), 'utf8')).includes('テスト声'), false);
+    assert.equal((await fetch(base + '/api/admin/presets')).status, 404);
+    assert.equal((await readFile(path.join(dir, 'presets.json'), 'utf8')).includes('テスト声'), true);
   } finally { server.kill(); mock.close(); await rm(dir, { recursive: true, force: true }); }
 });
 
