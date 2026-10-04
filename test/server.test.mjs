@@ -2,35 +2,44 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { FileStore } from '../backend/store.mjs';
+import { FileStore, initialPresets } from '../backend/store.mjs';
+import { validPreset } from '../backend/core.mjs';
 
 async function listen(server) { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); return server.address().port; }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-test('preset settings persist after creating a new store instance and Hina starts unconfigured', async () => {
+test('packaged presets and personal voice choices persist without reviving old unrelated voices', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'voice-store-'));
   try {
+    const packaged = initialPresets.find(preset => preset.enabled && validPreset(preset));
+    assert.ok(packaged, 'a configured packaged preset exists');
     const first = new FileStore(dir);
-    const initial = await first.getPresets();
-    const hina = initial.find(preset => preset.id === 'hina');
-    assert.equal(hina.styleId, null);
-    const configured = { ...hina, styleId: 3, enabled: true, credit: 'VOICEVOX:ずんだもん', termsUrl: 'https://zunko.jp/con_ongen_kiyaku.html', speedScale: 1.2, pitchScale: 0.02, intonationScale: 1.1, volumeScale: 1, prePhonemeLength: 0.1, postPhonemeLength: 0.1 };
-    await first.savePreset(configured);
+    const personal = { ...packaged, id: 'local-choice', name: '保存した声', sourcePresetId: packaged.id, styleId: 99 };
+    const oldVoice = { ...personal, id: 'old-voice', name: '古い声', sourcePresetId: undefined };
+    await writeFile(path.join(dir, 'presets.json'), JSON.stringify([oldVoice]));
+    await first.savePreset(personal);
     const restarted = new FileStore(dir);
-    assert.deepEqual((await restarted.getPresets()).find(preset => preset.id === 'hina'), configured);
-    assert.equal((await readFile(path.join(dir, 'presets.json'), 'utf8')).includes('ヒナ'), true);
+    const loaded = await restarted.getPresets();
+    assert.deepEqual(loaded.find(preset => preset.id === packaged.id), packaged);
+    assert.deepEqual(loaded.find(preset => preset.id === personal.id), personal);
+    assert.equal(loaded.some(preset => preset.id === oldVoice.id), false);
+    assert.equal((await readFile(path.join(dir, 'presets.json'), 'utf8')).includes('保存した声'), true);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('local API loads preset JSON, saves personal presets, synthesizes audio, and reports an unavailable engine', async () => {
   let receivedQuery;
+  let querySpeaker;
+  let synthesisSpeaker;
+  const packaged = initialPresets.find(preset => preset.enabled && validPreset(preset));
+  assert.ok(packaged, 'a configured packaged preset exists');
   const mock = http.createServer(async (req, res) => {
-    if (req.url === '/speakers') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify([{ name: 'ずんだもん', styles: [{ id: 3, name: 'ノーマル' }] }])); return; }
-    if (req.url.startsWith('/audio_query')) { res.setHeader('Content-Type', 'application/json'); res.end('{}'); return; }
-    if (req.url.startsWith('/synthesis')) { const chunks = []; for await (const chunk of req) chunks.push(chunk); receivedQuery = JSON.parse(Buffer.concat(chunks)); res.setHeader('Content-Type', 'audio/wav'); res.end(Buffer.from('RIFFtestWAVE')); return; }
+    if (req.url === '/speakers') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify([{ name: '配布話者', styles: [{ id: packaged.styleId, name: '通常' }] }, { name: '別話者', styles: [{ id: 99, name: '通常' }] }])); return; }
+    if (req.url.startsWith('/audio_query')) { querySpeaker = new URL(req.url, 'http://127.0.0.1').searchParams.get('speaker'); res.setHeader('Content-Type', 'application/json'); res.end('{}'); return; }
+    if (req.url.startsWith('/synthesis')) { synthesisSpeaker = new URL(req.url, 'http://127.0.0.1').searchParams.get('speaker'); const chunks = []; for await (const chunk of req) chunks.push(chunk); receivedQuery = JSON.parse(Buffer.concat(chunks)); res.setHeader('Content-Type', 'audio/wav'); res.end(Buffer.from('RIFFtestWAVE')); return; }
     if (req.url === '/version') { res.end('0.25'); return; }
     res.writeHead(404).end();
   });
@@ -43,17 +52,26 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     let ready = false;
     for (let i = 0; i < 50; i++) { try { if ((await fetch(base + '/api/health')).ok) { ready = true; break; } } catch {} await pause(100); }
     assert.ok(ready, 'server starts');
-    const preset = { id: 'custom-test', name: 'テスト声', styleId: 3, credit: 'VOICEVOX:ずんだもん', termsUrl: 'https://zunko.jp/con_ongen_kiyaku.html', enabled: true, speedScale: 1.2, pitchScale: 0.02, intonationScale: 1.1, volumeScale: 1, prePhonemeLength: 0.1, postPhonemeLength: 0.1 };
+    const speakers = await (await fetch(base + '/api/speakers')).json();
+    assert.deepEqual(speakers.speakers.find(item => item.id === 99), { id: 99, speaker: '別話者', style: '通常' });
+    const preset = { ...packaged, id: 'custom-test', name: 'テスト声', sourcePresetId: packaged.id, styleId: 99, credit: 'VOICEVOX:別話者', speedScale: 1.2 };
     const saved = await fetch(base + '/api/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(preset) });
     assert.equal(saved.status, 201);
     const publicList = await (await fetch(base + '/api/presets')).json();
     assert.equal(publicList.presets.some(item => item.name === 'テスト声'), true);
+    assert.equal(publicList.presets.find(item => item.id === preset.id).sourcePresetId, packaged.id);
+    const override = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: packaged.id, styleId: 99, text: '話者を変更' }) });
+    assert.equal(override.status, 200);
+    assert.equal(querySpeaker, '99');
+    assert.equal(synthesisSpeaker, '99');
     const wav = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: preset.id, text: 'こんにちは' }) });
     assert.equal(wav.status, 200);
     assert.equal(wav.headers.get('content-type'), 'audio/wav');
     assert.equal(receivedQuery.speedScale, 1.2);
-    const disabledHina = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: 'hina', text: 'ヒナは未設定' }) });
-    assert.equal(disabledHina.status, 400);
+    assert.equal(querySpeaker, '99');
+    assert.equal(synthesisSpeaker, '99');
+    const unknownStyle = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: preset.id, styleId: 999, text: '話者不明' }) });
+    assert.equal(unknownStyle.status, 400);
     const savedAgain = await (await fetch(base + '/api/presets')).json();
     assert.equal(savedAgain.presets.find(item => item.id === preset.id).name, 'テスト声');
     assert.equal((await fetch(base + '/api/admin/presets')).status, 404);

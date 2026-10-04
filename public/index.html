@@ -24,8 +24,14 @@
 
         <section id="parameterPanel" class="parameter-panel" hidden aria-labelledby="parameterTitle">
           <div class="parameter-heading">
-            <h2 id="parameterTitle">パラメータ</h2>
+            <h2 id="parameterTitle">話者・パラメータ</h2>
             <button id="resetParameters" class="secondary" type="button">保存値に戻す</button>
+          </div>
+          <div class="field speaker-field">
+            <label for="style">話者・スタイル</label>
+            <select id="style" disabled>
+              <option value="">VOICEVOXから読み込み中...</option>
+            </select>
           </div>
           <div class="grid parameter-grid">
             <div class="control"><label for="speedScale">話速 <output id="speedScaleValue"></output></label><input id="speedScale" type="range" min="0.5" max="2" step="0.01"></div>

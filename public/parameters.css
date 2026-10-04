@@ -12,6 +12,7 @@
   margin-bottom: 18px;
 }
 .parameter-heading h2 { margin: 0; font-size: 15px; }
+.speaker-field { margin-bottom: 18px; }
 .parameter-grid .control { margin-bottom: 7px; }
 .parameter-grid .control label { margin-bottom: 6px; font-size: 13px; }
 .parameter-grid output { float: right; color: #455f78; font-variant-numeric: tabular-nums; }

@@ -49,6 +49,16 @@ async function engine(endpoint, options = {}, timeout = 45_000) {
   return response;
 }
 
+async function getStyles() {
+  const response = await engine('/speakers', {}, 10_000);
+  const speakers = await response.json();
+  return speakers.flatMap(speaker => (speaker.styles || []).filter(style => Number.isInteger(style.id)).map(style => ({
+    id: style.id,
+    speaker: speaker.name,
+    style: style.name,
+  })));
+}
+
 function error(res, cause) {
   const status = cause.status || 500;
   json(res, status, { error: cause.message || '処理に失敗しました。' });
@@ -69,13 +79,23 @@ async function handler(req, res) {
     }
     if (req.method === 'GET' && url.pathname === '/api/presets') {
       const presets = (await store.getPresets()).filter(preset => preset.enabled && validPreset(preset));
-      json(res, 200, { presets: presets.map(publicPreset), maxChars: MAX_CHARS });
+      const packaged = initialPresets.filter(validPreset);
+      json(res, 200, { presets: presets.map(preset => ({
+        ...publicPreset(preset),
+        sourcePresetId: preset.sourcePresetId || packaged.find(item => item.id === preset.id || item.styleId === preset.styleId)?.id,
+      })), maxChars: MAX_CHARS });
+      return;
+    }
+    if (req.method === 'GET' && url.pathname === '/api/speakers') {
+      json(res, 200, { speakers: await getStyles() });
       return;
     }
     if (req.method === 'POST' && url.pathname === '/api/presets') {
       const input = await bodyJson(req);
-      const supportedStyles = new Set(initialPresets.filter(validPreset).map(preset => preset.styleId));
-      if (initialPresets.some(preset => preset.id === input.id) || !validPreset(input) || !supportedStyles.has(input.styleId)) {
+      const packagedIds = new Set(initialPresets.filter(validPreset).map(preset => preset.id));
+      if (!validPreset(input) || initialPresets.some(preset => preset.id === input.id)
+        || !packagedIds.has(input.sourcePresetId)
+        || !(await getStyles()).some(style => style.id === input.styleId)) {
         json(res, 400, { error: 'プリセット名と話者・スタイル、設定値を確認してください。' }); return;
       }
       await store.savePreset(input);
@@ -90,6 +110,10 @@ async function handler(req, res) {
       }
       const preset = (await store.getPresets()).find(item => item.id === input.presetId && item.enabled && validPreset(item));
       if (!preset) { json(res, 400, { error: 'このプリセットは未設定か無効です。配布用または利用者用のプリセットJSONを確認してください。' }); return; }
+      const styleId = input.styleId ?? preset.styleId;
+      if (!Number.isInteger(styleId) || !(await getStyles()).some(style => style.id === styleId)) {
+        json(res, 400, { error: '選択した話者・スタイルがVOICEVOXに見つかりません。' }); return;
+      }
       const parameters = input.parameters ?? {};
       if (!parameters || typeof parameters !== 'object' || Array.isArray(parameters)) {
         json(res, 400, { error: '読み上げパラメータの形式が正しくありません。' }); return;
@@ -99,10 +123,10 @@ async function handler(req, res) {
           json(res, 400, { error: '読み上げパラメータが範囲外です。画面のスライダーを確認してください。' }); return;
         }
       }
-      const queryResponse = await engine(`/audio_query?text=${encodeURIComponent(text.trim())}&speaker=${preset.styleId}`, { method: 'POST' });
+      const queryResponse = await engine(`/audio_query?text=${encodeURIComponent(text.trim())}&speaker=${styleId}`, { method: 'POST' });
       const query = await queryResponse.json();
       for (const key of Object.keys(PARAMS)) query[key] = Object.hasOwn(parameters, key) ? parameters[key] : preset[key];
-      const audioResponse = await engine(`/synthesis?speaker=${preset.styleId}`, {
+      const audioResponse = await engine(`/synthesis?speaker=${styleId}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(query),
       }, 90_000);
       const audio = Buffer.from(await audioResponse.arrayBuffer());
