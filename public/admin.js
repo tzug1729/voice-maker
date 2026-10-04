@@ -80,9 +80,10 @@ $('presetSelect').addEventListener('change', () => {
 });
 $('newPreset').addEventListener('click', resetForm);
 $('exportDefaults').addEventListener('click', () => {
-  const hina = presets.find(preset => preset.id === 'hina');
-  if (!hina?.enabled || !Number.isInteger(hina.styleId)) {
-    status('先にヒナの話者・設定値を保存し、「読み上げ画面の選択肢に表示する」を有効にしてください。');
+  const hasConfiguredPreset = presets.some(preset => preset.enabled && Number.isInteger(preset.styleId)
+    && numeric.every(key => typeof preset[key] === 'number' && Number.isFinite(preset[key])));
+  if (!hasConfiguredPreset) {
+    status('配布するには、設定済みのプリセットを1つ以上有効にしてください。');
     return;
   }
   const blob = new Blob([`${JSON.stringify(presets, null, 2)}\n`], { type: 'application/json' });
