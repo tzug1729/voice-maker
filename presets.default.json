@@ -1,0 +1,30 @@
+[
+  {
+    "id": "hina",
+    "name": "ヒナ",
+    "enabled": false,
+    "styleId": null,
+    "credit": "",
+    "termsUrl": "",
+    "speedScale": null,
+    "pitchScale": null,
+    "intonationScale": null,
+    "volumeScale": null,
+    "prePhonemeLength": null,
+    "postPhonemeLength": null
+  },
+  {
+    "id": "zundamon",
+    "name": "ずんだもん",
+    "enabled": true,
+    "styleId": 3,
+    "credit": "VOICEVOX:ずんだもん",
+    "termsUrl": "https://zunko.jp/con_ongen_kiyaku.html",
+    "speedScale": 1,
+    "pitchScale": 0,
+    "intonationScale": 1,
+    "volumeScale": 1,
+    "prePhonemeLength": 0.1,
+    "postPhonemeLength": 0.1
+  }
+]

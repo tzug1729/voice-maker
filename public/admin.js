@@ -79,6 +79,21 @@ $('presetSelect').addEventListener('change', () => {
   if (preset) setForm(preset);
 });
 $('newPreset').addEventListener('click', resetForm);
+$('exportDefaults').addEventListener('click', () => {
+  const hina = presets.find(preset => preset.id === 'hina');
+  if (!hina?.enabled || !Number.isInteger(hina.styleId)) {
+    status('先にヒナの話者・設定値を保存し、「読み上げ画面の選択肢に表示する」を有効にしてください。');
+    return;
+  }
+  const blob = new Blob([`${JSON.stringify(presets, null, 2)}\n`], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'presets.default.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  status('配布用プリセットを書き出しました。READMEの「配布用プリセットを更新する」手順に進んでください。');
+});
 $('settings').addEventListener('submit', async event => {
   event.preventDefault();
   status('保存中...');

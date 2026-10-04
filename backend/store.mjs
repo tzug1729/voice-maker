@@ -10,14 +10,8 @@ const defaults = {
   postPhonemeLength: 0.1,
 };
 
-// Hina intentionally has no assumed speaker or synthesis settings.
-export const initialPresets = [
-  { id: 'hina', name: 'ヒナ', enabled: false, styleId: null, credit: '', termsUrl: '',
-    speedScale: null, pitchScale: null, intonationScale: null, volumeScale: null,
-    prePhonemeLength: null, postPhonemeLength: null },
-  { id: 'zundamon', name: 'ずんだもん', enabled: true, styleId: 3,
-    credit: 'VOICEVOX:ずんだもん', termsUrl: 'https://zunko.jp/con_ongen_kiyaku.html', ...defaults },
-];
+// This file is the version-controlled set of defaults distributed to new users.
+export const initialPresets = JSON.parse(await readFile(new URL('../presets.default.json', import.meta.url), 'utf8'));
 
 export class FileStore {
   constructor(dir) { this.dir = dir; this.queue = Promise.resolve(); }
@@ -37,9 +31,26 @@ export class FileStore {
     this.queue = next.catch(() => {});
     return next;
   }
-  async getPresets() { return this.read('presets.json', initialPresets); }
+  async readPresets() {
+    const saved = await this.read('presets.json', initialPresets);
+    const presets = Array.isArray(saved) ? [...saved] : [];
+    let changed = !Array.isArray(saved);
+    const preset = initialPresets.find(item => item.id === 'hina');
+    if (preset) {
+      const index = presets.findIndex(item => item.id === preset.id);
+      const current = presets[index];
+      const configured = current && Number.isInteger(current.styleId)
+        && Object.keys(defaults).every(key => typeof current[key] === 'number' && Number.isFinite(current[key]))
+        && typeof current.enabled === 'boolean';
+      if (index < 0) { presets.push(preset); changed = true; }
+      else if (!configured) { presets[index] = preset; changed = true; }
+    }
+    if (changed) await this.write('presets.json', presets);
+    return presets;
+  }
+  async getPresets() { return this.lock(() => this.readPresets()); }
   async savePreset(preset) { return this.lock(async () => {
-    const presets = await this.getPresets();
+    const presets = await this.readPresets();
     const next = presets.some(item => item.id === preset.id)
       ? presets.map(item => item.id === preset.id ? preset : item)
       : [...presets, preset];
@@ -47,7 +58,7 @@ export class FileStore {
     return next;
   }); }
   async deletePreset(id) { return this.lock(async () => {
-    const next = (await this.getPresets()).filter(preset => preset.id !== id);
+    const next = (await this.readPresets()).filter(preset => preset.id !== id);
     await this.write('presets.json', next);
     return next;
   }); }
