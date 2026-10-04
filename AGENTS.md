@@ -3,7 +3,7 @@
 ## Project Structure
 
 - `backend/server.mjs` serves the local-only HTTP API and static application.
-- `backend/store.mjs` stores presets in the user's local application data folder.
+- `backend/store.mjs` stores personal presets in `presets.json` at the repository root.
 - `backend/core.mjs` validates presets and defines synthesis ranges.
 - `public/` contains the reading screen and its controls.
 - `test/` contains Node.js built-in test runner coverage using a mock VOICEVOX engine.
@@ -19,4 +19,4 @@
 
 ## Local Data and Privacy
 
-Preset data is stored under `%LOCALAPPDATA%\voice-maker`. Do not commit generated audio, local preset data, dependencies, or personal environment files. The app must continue to bind only to `127.0.0.1`.
+Personal presets and saved WAV files stay at the repository root and are ignored by Git. Do not commit generated audio, local preset data, dependencies, or personal environment files. The app must continue to bind only to `127.0.0.1`.

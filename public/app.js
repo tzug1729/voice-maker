@@ -3,6 +3,7 @@ const parameterNames = ['speedScale', 'pitchScale', 'intonationScale', 'volumeSc
 let presets = [];
 let speakers = [];
 let audioUrl;
+let audioBlob;
 
 function selectedPreset() { return presets.find(preset => preset.id === $('preset').value); }
 function showMessage(message) { $('message').textContent = message; }
@@ -125,17 +126,29 @@ $('form').addEventListener('submit', async event => {
     }
     const blob = await response.blob();
     if (audioUrl) URL.revokeObjectURL(audioUrl);
+    audioBlob = blob;
     audioUrl = URL.createObjectURL(blob);
     $('player').src = audioUrl;
-    $('download').href = audioUrl;
-    $('download').download = `voice-${Date.now()}.wav`;
     $('result').hidden = false;
-    showMessage('音声を生成しました。再生またはWAV保存ができます。');
+    showMessage('音声を生成しました。再生、またはWAVを保存できます。');
   } catch (error) { showMessage(error.message || '音声を生成できませんでした。'); }
   finally {
     $('generate').disabled = false;
     $('generate').textContent = '音声を生成';
   }
+});
+
+$('saveWav').addEventListener('click', async () => {
+  if (!audioBlob) return;
+  $('saveWav').disabled = true;
+  showMessage('WAVを保存中...');
+  try {
+    const saved = await api('/api/wav', {
+      method: 'POST', headers: { 'Content-Type': 'audio/wav' }, body: audioBlob,
+    });
+    showMessage(`WAVを保存しました。保存先: ${saved.storagePath}`);
+  } catch (error) { showMessage(error.message); }
+  finally { $('saveWav').disabled = false; }
 });
 
 $('saveAsPreset').addEventListener('click', () => {

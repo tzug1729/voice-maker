@@ -2,17 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { FileStore, initialPresets } from '../backend/store.mjs';
+import { createStore, FileStore, initialPresets } from '../backend/store.mjs';
 import { validPreset } from '../backend/core.mjs';
 
 async function listen(server) { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); return server.address().port; }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const testDataDir = path.join(process.cwd(), 'data');
+async function testDir(prefix) {
+  await mkdir(testDataDir, { recursive: true });
+  return mkdtemp(path.join(testDataDir, prefix));
+}
+
+test('normal storage stays at the project root', () => {
+  assert.equal(createStore().dir, process.cwd());
+});
 
 test('packaged presets and personal voice choices persist without reviving old unrelated voices', async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), 'voice-store-'));
+  const dir = await testDir('voice-store-');
   try {
     const packaged = initialPresets.find(preset => preset.enabled && validPreset(preset));
     assert.ok(packaged, 'a configured packaged preset exists');
@@ -44,9 +52,9 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     res.writeHead(404).end();
   });
   const mockPort = await listen(mock);
-  const dir = await mkdtemp(path.join(tmpdir(), 'voice-maker-'));
+  const dir = await testDir('voice-maker-');
   const probe = http.createServer(); const port = await listen(probe); probe.close();
-  const server = spawn(process.execPath, ['backend/server.mjs'], { cwd: process.cwd(), env: { ...process.env, PORT: String(port), ENGINE_URL: `http://127.0.0.1:${mockPort}`, DATA_DIR: dir }, stdio: 'ignore' });
+  const server = spawn(process.execPath, ['backend/server.mjs'], { cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'test', PORT: String(port), ENGINE_URL: `http://127.0.0.1:${mockPort}`, DATA_DIR: dir }, stdio: 'ignore' });
   const base = `http://127.0.0.1:${port}`;
   try {
     let ready = false;
@@ -72,6 +80,12 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     const wav = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: preset.id, text: 'こんにちは' }) });
     assert.equal(wav.status, 200);
     assert.equal(wav.headers.get('content-type'), 'audio/wav');
+    const audio = Buffer.from(await wav.arrayBuffer());
+    const savedWav = await fetch(base + '/api/wav', { method: 'POST', headers: { 'Content-Type': 'audio/wav' }, body: audio });
+    assert.equal(savedWav.status, 201);
+    const wavPath = (await savedWav.json()).storagePath;
+    assert.equal(path.dirname(wavPath), dir);
+    assert.deepEqual(await readFile(wavPath), audio);
     assert.equal(receivedQuery.speedScale, 1.2);
     assert.equal(querySpeaker, '99');
     assert.equal(synthesisSpeaker, '99');
@@ -88,7 +102,7 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
 test('engine connection errors explain how to start VOICEVOX', async () => {
   const probe = http.createServer(); const port = await listen(probe); probe.close();
   const unused = http.createServer(); const enginePort = await listen(unused); unused.close();
-  const server = spawn(process.execPath, ['backend/server.mjs'], { cwd: process.cwd(), env: { ...process.env, PORT: String(port), ENGINE_URL: `http://127.0.0.1:${enginePort}`, DATA_DIR: path.join(tmpdir(), `voice-maker-down-${process.pid}`) }, stdio: 'ignore' });
+  const server = spawn(process.execPath, ['backend/server.mjs'], { cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'test', PORT: String(port), ENGINE_URL: `http://127.0.0.1:${enginePort}`, DATA_DIR: path.join(testDataDir, `voice-maker-down-${process.pid}`) }, stdio: 'ignore' });
   try {
     let result;
     for (let i = 0; i < 50; i++) { try { result = await (await fetch(`http://127.0.0.1:${port}/api/health`)).json(); break; } catch {} await pause(100); }

@@ -17,16 +17,6 @@ if %NODE_MAJOR% LSS 20 (
   exit /b 1
 )
 
-if not exist "node_modules" (
-  echo 初回セットアップ中...
-  call npm ci
-  if errorlevel 1 (
-    echo パッケージの準備に失敗しました。Node.js と npm を確認してください。
-    pause
-    exit /b 1
-  )
-)
-
 echo ブラウザーを開きます。VOICEVOXデスクトップアプリも起動してください。
 start "" /b powershell.exe -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Seconds 2; Start-Process 'http://127.0.0.1:3000'"
 echo このウィンドウを閉じるとアプリが終了します。

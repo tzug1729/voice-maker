@@ -17,7 +17,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .app-shell { width: min(820px, calc(100% - 36px)); margin: 0 auto; }
 .app-header { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dce1e5; }
 .app-header h1 { margin: 0; font-size: 19px; font-weight: 650; }
-footer a:hover, .download:hover { text-decoration: underline; }
+footer a:hover { text-decoration: underline; }
 main { padding: 24px 0 18px; }
 .panel { border: 1px solid #dfe4e8; border-radius: 16px; background: #fff; padding: 24px; box-shadow: 0 2px 7px #182b3d08; }
 .field { margin: 0 0 20px; }
@@ -40,7 +40,7 @@ button:disabled { opacity: .58; cursor: wait; }
 #message:empty { display: none; }
 .result { margin-top: 22px; padding-top: 20px; border-top: 1px solid #e1e5e8; }
 audio { display: block; width: 100%; margin: 10px 0; }
-.download { display: inline-block; margin-top: 4px; color: #315f8b; font-size: 14px; font-weight: 600; text-decoration: none; }
+.result .secondary { margin-top: 4px; }
 .credit-panel { margin-top: 16px; padding: 18px 22px; box-shadow: none; }
 .credit-panel h2 { margin: 0 0 10px; font-size: 15px; }
 .credit-panel p { margin: 8px 0; font-size: 13px; line-height: 1.6; }

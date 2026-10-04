@@ -1,9 +1,11 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { validPreset } from './core.mjs';
 
 // This file is the version-controlled set of defaults distributed to new users.
 export const initialPresets = JSON.parse(await readFile(new URL('../presets.default.json', import.meta.url), 'utf8'));
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export class FileStore {
   constructor(dir) { this.dir = dir; this.queue = Promise.resolve(); }
@@ -45,6 +47,12 @@ export class FileStore {
 }
 
 export function createStore() {
-  const base = process.env.LOCALAPPDATA || process.env.APPDATA || path.resolve('data');
-  return new FileStore(process.env.DATA_DIR || path.join(base, 'voice-maker'));
+  if (process.env.NODE_ENV === 'test' && process.env.DATA_DIR) {
+    const testDir = path.resolve(process.env.DATA_DIR);
+    if (testDir !== projectRoot && !testDir.startsWith(projectRoot + path.sep)) {
+      throw new Error('テスト用データの保存先はvoice-maker内に指定してください。');
+    }
+    return new FileStore(testDir);
+  }
+  return new FileStore(projectRoot);
 }

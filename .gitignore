@@ -1,5 +1,8 @@
 node_modules/
 data/
+/presets.json
+/presets.json.*.tmp
+/voice-*.wav
 .env
 .env.*
 .vercel/

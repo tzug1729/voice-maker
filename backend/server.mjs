@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MAX_CHARS, PARAMS, publicPreset, validPreset } from './core.mjs';
@@ -27,6 +27,26 @@ async function bodyJson(req) {
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
   catch { const error = new Error('入力形式が正しくありません。'); error.status = 400; throw error; }
+}
+
+async function bodyWav(req) {
+  if (req.headers['content-type']?.split(';')[0] !== 'audio/wav') {
+    const error = new Error('WAV形式の音声を送信してください。'); error.status = 415; throw error;
+  }
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 64 * 1024 * 1024) {
+      const error = new Error('音声ファイルが大きすぎます。'); error.status = 413; throw error;
+    }
+    chunks.push(chunk);
+  }
+  const audio = Buffer.concat(chunks);
+  if (audio.length < 12 || audio.toString('ascii', 0, 4) !== 'RIFF' || audio.toString('ascii', 8, 12) !== 'WAVE') {
+    const error = new Error('WAV形式の音声ではありません。'); error.status = 400; throw error;
+  }
+  return audio;
 }
 
 async function engine(endpoint, options = {}, timeout = 45_000) {
@@ -101,6 +121,13 @@ async function handler(req, res) {
       const preset = { ...input, defaultText: null };
       await store.savePreset(preset);
       json(res, 201, { preset: { ...publicPreset(preset), sourcePresetId: preset.sourcePresetId }, storagePath: path.join(store.dir, 'presets.json') });
+      return;
+    }
+    if (req.method === 'POST' && url.pathname === '/api/wav') {
+      const audio = await bodyWav(req);
+      const file = path.join(store.dir, `voice-${Date.now()}-${randomUUID().slice(0, 8)}.wav`);
+      await writeFile(file, audio, { flag: 'wx' });
+      json(res, 201, { storagePath: file });
       return;
     }
     if (req.method === 'POST' && url.pathname === '/api/synthesize') {
