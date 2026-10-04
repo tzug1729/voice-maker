@@ -36,7 +36,7 @@ npm start
 
 ## プリセット
 
-起動時に `presets.default.json`（配布用）と `%LOCALAPPDATA%\voice-maker\presets.json`（このPCで保存したもの）を読み込み、両方の有効なプリセットを選択欄に表示します。プリセットはVOICEVOXの既存話者・スタイルIDと合成値の組み合わせです。新しい音声モデルは作りません。
+起動時に `presets.default.json`（配布用）と `%LOCALAPPDATA%\voice-maker\presets.json`（このPCで保存したもの）を読み込みます。選択欄に表示するのは、配布用JSONにある話者・スタイルと一致するプリセットだけです。ユーザー用JSONに古い別話者のデータが残っていても選択欄には表示しません。プリセットはVOICEVOXの既存話者・スタイルIDと合成値の組み合わせです。新しい音声モデルは作りません。
 
 配布するプリセットを追加・変更するには、プロジェクト直下の `presets.default.json` を編集してGitHubに反映します。話者・スタイルは `styleId` にVOICEVOXエンジンのスタイルIDを設定します。VOICEVOXを起動し、`http://127.0.0.1:50021/speakers` を開くと話者名と `styles` 内の `id` を確認できます。`speedScale`、`pitchScale`、`intonationScale`、`volumeScale`、`prePhonemeLength`、`postPhonemeLength` は必要な数値を指定します。未設定の話者IDや数値のプリセットは選択欄に出しません。
 

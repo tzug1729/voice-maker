@@ -28,10 +28,12 @@ export class FileStore {
     return Array.isArray(saved) ? saved : [];
   }
   mergePresets(userPresets) {
-    const localById = new Map(userPresets.filter(validPreset).map(preset => [preset.id, preset]));
+    const supportedStyles = new Set(initialPresets.filter(validPreset).map(preset => preset.styleId));
+    const supportedUserPresets = userPresets.filter(preset => validPreset(preset) && supportedStyles.has(preset.styleId));
+    const localById = new Map(supportedUserPresets.map(preset => [preset.id, preset]));
     const packagedIds = new Set(initialPresets.map(preset => preset.id));
     const packaged = initialPresets.map(preset => localById.get(preset.id) || preset);
-    const personal = userPresets.filter(preset => validPreset(preset) && !packagedIds.has(preset.id));
+    const personal = supportedUserPresets.filter(preset => !packagedIds.has(preset.id));
     return [...packaged, ...personal];
   }
   async getPresets() { return this.lock(async () => this.mergePresets(await this.readUserPresets())); }

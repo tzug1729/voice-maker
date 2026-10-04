@@ -74,7 +74,8 @@ async function handler(req, res) {
     }
     if (req.method === 'POST' && url.pathname === '/api/presets') {
       const input = await bodyJson(req);
-      if (initialPresets.some(preset => preset.id === input.id) || !validPreset(input)) {
+      const supportedStyles = new Set(initialPresets.filter(validPreset).map(preset => preset.styleId));
+      if (initialPresets.some(preset => preset.id === input.id) || !validPreset(input) || !supportedStyles.has(input.styleId)) {
         json(res, 400, { error: 'プリセット名と話者・スタイル、設定値を確認してください。' }); return;
       }
       await store.savePreset(input);
