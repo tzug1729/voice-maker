@@ -22,7 +22,7 @@ function setForm(preset) {
 
 function resetForm() {
   creating = true;
-  currentId = `custom-${crypto.randomUUID()}`;
+  currentId = `local-${crypto.randomUUID().replaceAll('-', '')}`;
   $('name').disabled = false;
   $('name').value = '';
   $('style').value = '';

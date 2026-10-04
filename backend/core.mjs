@@ -19,5 +19,12 @@ export function validPreset(value) {
 }
 
 export function publicPreset(preset) {
-  return { id: preset.id, name: preset.name, credit: preset.credit, termsUrl: preset.termsUrl };
+  return {
+    id: preset.id,
+    name: preset.name,
+    styleId: preset.styleId,
+    credit: preset.credit,
+    termsUrl: preset.termsUrl,
+    ...Object.fromEntries(Object.keys(PARAMS).map(key => [key, preset[key]])),
+  };
 }

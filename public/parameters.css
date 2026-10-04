@@ -1,50 +1,27 @@
 .parameter-panel {
-  margin-top: 28px;
-  padding-top: 23px;
-  border-top: 1px solid #e3ebe6;
+  margin: 22px 0;
+  padding: 18px 0;
+  border-top: 1px solid #e1e5e8;
+  border-bottom: 1px solid #e1e5e8;
 }
 .parameter-heading {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 18px;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 18px;
 }
-.parameter-heading h2 {
-  margin: 0 0 5px;
-  font-size: 16px;
-}
-.parameter-heading p {
-  margin: 0;
-  color: #718079;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.parameter-heading .secondary {
-  flex: 0 0 auto;
-}
-.parameter-grid .control label {
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-.parameter-grid output {
-  float: right;
-  color: #188363;
-  font-variant-numeric: tabular-nums;
-}
-.parameter-grid input[type='range'] {
+.parameter-heading h2 { margin: 0; font-size: 15px; }
+.parameter-grid .control { margin-bottom: 7px; }
+.parameter-grid .control label { margin-bottom: 6px; font-size: 13px; }
+.parameter-grid output { float: right; color: #455f78; font-variant-numeric: tabular-nums; }
+.parameter-grid input[type="range"] {
   display: block;
   width: 100%;
-  margin: 2px 0 15px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  accent-color: #23a57e;
+  margin: 0 0 8px;
+  accent-color: #315f8b;
 }
-@media (max-width: 650px) {
-  .parameter-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+.save-preset { margin-top: 10px; }
+@media (max-width: 600px) {
+  .parameter-grid { grid-template-columns: 1fr; }
 }
