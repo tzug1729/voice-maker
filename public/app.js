@@ -6,6 +6,10 @@ let audioUrl;
 
 function selectedPreset() { return presets.find(preset => preset.id === $('preset').value); }
 function showMessage(message) { $('message').textContent = message; }
+function setPresetText(preset) {
+  $('text').value = preset?.defaultText ?? '';
+  $('count').textContent = `${[...$('text').value].length} / 500`;
+}
 
 function setParameters(preset) {
   $('parameterPanel').hidden = !preset;
@@ -40,11 +44,12 @@ function renderSpeakers() {
   $('style').disabled = !speakers.length;
 }
 
-function renderPresets(selectedId = '') {
+function renderPresets(selectedId = '', updateText = true) {
   $('preset').replaceChildren(new Option('プリセットを選択', ''));
   for (const preset of presets) $('preset').add(new Option(preset.name, preset.id));
   $('preset').value = selectedId;
   refreshPresetView();
+  if (updateText) setPresetText(selectedPreset());
 }
 
 async function api(url, options = {}) {
@@ -83,6 +88,7 @@ async function init() {
 
 $('preset').addEventListener('change', () => {
   refreshPresetView();
+  setPresetText(selectedPreset());
   showMessage('');
 });
 $('style').addEventListener('change', refreshCredit);
@@ -152,6 +158,7 @@ $('savePresetForm').addEventListener('submit', async event => {
     enabled: true,
     styleId: voice.id,
     sourcePresetId: source.sourcePresetId || source.id,
+    defaultText: null,
     credit: voice.id === source.styleId ? source.credit : `VOICEVOX:${voice.speaker}`,
     termsUrl: voice.id === source.styleId ? source.termsUrl : '',
   };
@@ -160,15 +167,15 @@ $('savePresetForm').addEventListener('submit', async event => {
   save.disabled = true;
   $('savePresetMessage').textContent = '保存中...';
   try {
-    await api('/api/presets', {
+    const saved = await api('/api/presets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(preset),
     });
     presets.push(preset);
-    renderPresets(preset.id);
+    renderPresets(preset.id, false);
     $('saveDialog').close();
-    showMessage(`「${preset.name}」をこのPCのプリセットに保存しました。`);
+    showMessage(`「${preset.name}」を保存しました。保存先: ${saved.storagePath}`);
   } catch (error) { $('savePresetMessage').textContent = error.message; }
   finally { save.disabled = false; }
 });

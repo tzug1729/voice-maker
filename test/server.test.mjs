@@ -17,7 +17,7 @@ test('packaged presets and personal voice choices persist without reviving old u
     const packaged = initialPresets.find(preset => preset.enabled && validPreset(preset));
     assert.ok(packaged, 'a configured packaged preset exists');
     const first = new FileStore(dir);
-    const personal = { ...packaged, id: 'local-choice', name: '保存した声', sourcePresetId: packaged.id, styleId: 99 };
+    const personal = { ...packaged, id: 'local-choice', name: '保存した声', sourcePresetId: packaged.id, styleId: 99, defaultText: null };
     const oldVoice = { ...personal, id: 'old-voice', name: '古い声', sourcePresetId: undefined };
     await writeFile(path.join(dir, 'presets.json'), JSON.stringify([oldVoice]));
     await first.savePreset(personal);
@@ -57,8 +57,13 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     const preset = { ...packaged, id: 'custom-test', name: 'テスト声', sourcePresetId: packaged.id, styleId: 99, credit: 'VOICEVOX:別話者', speedScale: 1.2 };
     const saved = await fetch(base + '/api/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(preset) });
     assert.equal(saved.status, 201);
+    const saveResult = await saved.json();
+    assert.equal(saveResult.storagePath, path.join(dir, 'presets.json'));
+    assert.equal(saveResult.preset.defaultText, null);
     const publicList = await (await fetch(base + '/api/presets')).json();
     assert.equal(publicList.presets.some(item => item.name === 'テスト声'), true);
+    assert.equal(publicList.presets.find(item => item.id === packaged.id).defaultText, packaged.defaultText ?? null);
+    assert.equal(publicList.presets.find(item => item.id === preset.id).defaultText, null);
     assert.equal(publicList.presets.find(item => item.id === preset.id).sourcePresetId, packaged.id);
     const override = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: packaged.id, styleId: 99, text: '話者を変更' }) });
     assert.equal(override.status, 200);
@@ -75,7 +80,8 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     const savedAgain = await (await fetch(base + '/api/presets')).json();
     assert.equal(savedAgain.presets.find(item => item.id === preset.id).name, 'テスト声');
     assert.equal((await fetch(base + '/api/admin/presets')).status, 404);
-    assert.equal((await readFile(path.join(dir, 'presets.json'), 'utf8')).includes('テスト声'), true);
+    const savedFile = JSON.parse(await readFile(path.join(dir, 'presets.json'), 'utf8'));
+    assert.equal(savedFile.find(item => item.id === preset.id).defaultText, null);
   } finally { server.kill(); mock.close(); await rm(dir, { recursive: true, force: true }); }
 });
 

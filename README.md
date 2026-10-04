@@ -38,7 +38,7 @@ npm start
 
 起動時に `presets.default.json`（配布用）と `%LOCALAPPDATA%\voice-maker\presets.json`（このPCで保存したもの）を読み込みます。配布用JSONのプリセットと、この画面から保存した個人用プリセットを選択欄に表示します。以前のユーザー用JSONに残っている別話者のプリセットは表示しません。プリセットはVOICEVOXの既存話者・スタイルIDと合成値の組み合わせです。新しい音声モデルは作りません。
 
-配布するプリセットを追加・変更するには、プロジェクト直下の `presets.default.json` を編集してGitHubに反映します。話者・スタイルは `styleId` にVOICEVOXエンジンのスタイルIDを設定します。VOICEVOXを起動し、`http://127.0.0.1:50021/speakers` を開くと話者名と `styles` 内の `id` を確認できます。`speedScale`、`pitchScale`、`intonationScale`、`volumeScale`、`prePhonemeLength`、`postPhonemeLength` は必要な数値を指定します。未設定の話者IDや数値のプリセットは選択欄に出しません。
+配布するプリセットを追加・変更するには、プロジェクト直下の `presets.default.json` を編集してGitHubに反映します。話者・スタイルは `styleId` にVOICEVOXエンジンのスタイルIDを設定します。VOICEVOXを起動し、`http://127.0.0.1:50021/speakers` を開くと話者名と `styles` 内の `id` を確認できます。`speedScale`、`pitchScale`、`intonationScale`、`volumeScale`、`prePhonemeLength`、`postPhonemeLength` は必要な数値を指定します。`defaultText` に文章を設定すると、そのプリセットを選んだときに文章欄へ入ります。初期文章が不要なら `null` を指定します。未設定の話者IDや数値のプリセットは選択欄に出しません。
 
 たとえば、ヒナをずんだもんの声にする場合は、ヒナの項目の `styleId` をVOICEVOXの「ずんだもん／ノーマル」に対応するIDに設定します。ずんだもんやもち子さんを別々に選びたい場合は、JSONにそれぞれ別のプリセット項目を追加します。利用規約とクレジット表記も確認してください。
 
@@ -46,7 +46,7 @@ npm start
 
 読み上げ画面でプリセットを選ぶと、VOICEVOXにインストールされた話者・スタイルの選択欄と、話速・高さ・抑揚・音量・前後の無音時間のスライダーが表示されます。話者や値を変更してから音声を生成できます。**保存値に戻す** で選択したプリセットの話者と数値に戻せます。話者一覧が表示されない場合は、VOICEVOXを起動してページを再読み込みしてください。
 
-調整後の話者と値を別名で残すには、**現在の設定を新しいプリセットとして保存** を押して名前を入力します。個人用JSONに追加され、次回起動時も読み込まれます。配布用JSONは変更しません。
+調整後の話者と値を別名で残すには、**現在の設定を新しいプリセットとして保存** を押して名前を入力します。個人用の `%LOCALAPPDATA%\voice-maker\presets.json` に追加され、次回起動時も読み込まれます。保存後は画面に実際のファイルパスを表示します。ブラウザーの `localStorage` は使いません。個人用プリセットの `defaultText` は `null` です。
 
 ## 終了方法
 

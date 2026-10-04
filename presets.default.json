@@ -4,6 +4,7 @@
     "name": "ヒナ",
     "enabled": true,
     "styleId": 5,
+    "defaultText": "風紀委員長のヒナ。私の名前は知ってると思うけど...．よろしく．",
     "credit": "",
     "termsUrl": "",
     "speedScale": 0.89,

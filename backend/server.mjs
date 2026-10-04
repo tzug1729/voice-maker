@@ -98,8 +98,9 @@ async function handler(req, res) {
         || !(await getStyles()).some(style => style.id === input.styleId)) {
         json(res, 400, { error: 'プリセット名と話者・スタイル、設定値を確認してください。' }); return;
       }
-      await store.savePreset(input);
-      json(res, 201, { preset: input });
+      const preset = { ...input, defaultText: null };
+      await store.savePreset(preset);
+      json(res, 201, { preset: { ...publicPreset(preset), sourcePresetId: preset.sourcePresetId }, storagePath: path.join(store.dir, 'presets.json') });
       return;
     }
     if (req.method === 'POST' && url.pathname === '/api/synthesize') {

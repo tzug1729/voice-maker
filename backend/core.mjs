@@ -9,6 +9,8 @@ export function validPreset(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if (typeof value.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,39}$/.test(value.id)) return false;
   if (typeof value.name !== 'string' || !value.name.trim() || value.name.length > 40) return false;
+  if (value.defaultText !== undefined && value.defaultText !== null
+    && (typeof value.defaultText !== 'string' || [...value.defaultText].length > MAX_CHARS)) return false;
   if (typeof value.credit !== 'string' || value.credit.length > 160) return false;
   if (typeof value.termsUrl !== 'string' || (value.termsUrl && !/^https:\/\/[^\s]+$/.test(value.termsUrl))) return false;
   if (!Number.isInteger(value.styleId) || value.styleId < 0) return false;
@@ -22,6 +24,7 @@ export function publicPreset(preset) {
   return {
     id: preset.id,
     name: preset.name,
+    defaultText: preset.defaultText ?? null,
     styleId: preset.styleId,
     credit: preset.credit,
     termsUrl: preset.termsUrl,
