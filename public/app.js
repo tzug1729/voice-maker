@@ -11,6 +11,14 @@ let analysisVersion = 0;
 
 function selectedPreset() { return presets.find(preset => preset.id === $('preset').value); }
 function showMessage(message) { $('message').textContent = message; }
+function clearGeneratedAudio() {
+  if (audioUrl) URL.revokeObjectURL(audioUrl);
+  audioUrl = undefined;
+  audioBlob = undefined;
+  $('player').removeAttribute('src');
+  $('player').load();
+  $('result').hidden = true;
+}
 function clearAccentAnalysis() {
   analysisVersion++;
   accentPhrases = undefined;
@@ -287,6 +295,11 @@ $('preset').addEventListener('change', () => {
   showMessage('');
 });
 $('style').addEventListener('change', () => { clearAccentAnalysis(); refreshCredit(); });
+window.addEventListener('dictionary-changed', () => {
+  clearAccentAnalysis();
+  clearGeneratedAudio();
+  showMessage('辞書を更新しました。音声を生成し直してください。読み替え欄に入力がある場合は空にしてください。');
+});
 
 for (const name of parameterNames) {
   $(name).addEventListener('input', () => { $(`${name}Value`).textContent = Number($(name).value).toFixed(2); });
@@ -364,12 +377,15 @@ $('form').addEventListener('submit', async event => {
       throw new Error(data.error || `音声を生成できませんでした (${response.status})。`);
     }
     const blob = await response.blob();
+    const accentReset = response.headers.get('X-Accent-Reset') === '1';
+    if (accentReset) clearAccentAnalysis();
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     audioBlob = blob;
     audioUrl = URL.createObjectURL(blob);
     $('player').src = audioUrl;
     $('result').hidden = false;
-    showMessage('音声を生成しました。再生、またはWAVを保存できます。');
+    showMessage(accentReset ? '辞書の読みが変わったため、古いアクセント調整を外して生成しました。再調整する場合は文章を解析してください。'
+      : '音声を生成しました。再生、またはWAVを保存できます。');
   } catch (error) { showMessage(error.message || '音声を生成できませんでした。'); }
   finally {
     $('generate').disabled = false;

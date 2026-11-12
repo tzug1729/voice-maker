@@ -71,6 +71,7 @@ function renderWords() {
       try {
         const data = await api(`/api/dictionary/${uuid}`, { method: 'DELETE' });
         words = data.words; renderWords(); resetWordForm();
+        window.dispatchEvent(new Event('dictionary-changed'));
         $('dictionaryMessage').textContent = '単語を削除しました。';
       } catch (error) { $('dictionaryMessage').textContent = error.message; }
     });
@@ -103,6 +104,7 @@ $('dictionaryForm').addEventListener('submit', async event => {
       method: editingUuid ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
     });
     words = data.words; renderWords(); resetWordForm();
+    window.dispatchEvent(new Event('dictionary-changed'));
     $('dictionaryMessage').textContent = '単語を dictionary.json に保存しました。';
   } catch (error) { $('dictionaryMessage').textContent = error.message; }
   finally { button.disabled = false; }

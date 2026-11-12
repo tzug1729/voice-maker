@@ -114,7 +114,16 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     assert.equal(receivedQuery.pauseLength, 0.35);
     assert.equal(queryText, 'あい');
     assert.equal(receivedQuery.accent_phrases[0].moras[1].pitch, 7.25);
+    assert.equal(wav.headers.get('x-accent-reset'), '0');
     assert.match(synthesisUrl, /enable_interrogative_upspeak=false/);
+    const stalePhrase = structuredClone(editedPhrase);
+    stalePhrase.moras[0].text = '別';
+    const refreshed = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      presetId: preset.id, text: '別の読みになった文章', accentPhrases: [stalePhrase],
+    }) });
+    assert.equal(refreshed.status, 200);
+    assert.equal(refreshed.headers.get('x-accent-reset'), '1');
+    assert.equal(receivedQuery.accent_phrases[0].moras[0].text, phrase.moras[0].text);
     const badAccent = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       presetId: preset.id, text: 'あい', accentPhrases: [{ ...editedPhrase, accent: 3 }],
     }) });

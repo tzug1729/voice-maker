@@ -105,6 +105,14 @@ function validText(text) { return typeof text === 'string' && !!text.trim() && [
 function validReadingText(text) { return text === undefined || (typeof text === 'string' && [...text].length <= MAX_CHARS); }
 function spokenText(input) { return input.readingText?.trim() || input.text; }
 
+function sameMoras(left, right) {
+  const flatten = phrases => phrases.flatMap(phrase => phrase.moras.map(mora =>
+    [mora.text, mora.consonant, mora.vowel.toLowerCase()]));
+  const a = flatten(left);
+  const b = flatten(right);
+  return a.length === b.length && a.every((mora, index) => mora.every((part, partIndex) => part === b[index][partIndex]));
+}
+
 async function audioQuery(text, styleId) {
   await ensureDictionary();
   const response = await engine(`/audio_query?text=${encodeURIComponent(text.trim())}&speaker=${styleId}`, { method: 'POST' });
@@ -331,19 +339,24 @@ async function handler(req, res) {
         json(res, 400, { error: 'アクセント句のデータが正しくありません。' }); return;
       }
       const query = await audioQuery(spokenText(input), styleId);
+      if (!validAccentPhrases(query.accent_phrases)) {
+        json(res, 502, { error: 'VOICEVOXの文章解析結果を読み込めませんでした。' }); return;
+      }
       for (const key of Object.keys(PARAMS)) {
         query[key] = Object.hasOwn(parameters, key) ? parameters[key] : preset[key] ?? AUDIO_DEFAULTS[key];
       }
       query.outputSamplingRate = options.outputSamplingRate ?? preset.outputSamplingRate ?? AUDIO_DEFAULTS.outputSamplingRate;
       query.outputStereo = options.outputStereo ?? preset.outputStereo ?? AUDIO_DEFAULTS.outputStereo;
       query.pauseLength = Object.hasOwn(options, 'pauseLength') ? options.pauseLength : preset.pauseLength ?? AUDIO_DEFAULTS.pauseLength;
-      if (input.accentPhrases) query.accent_phrases = input.accentPhrases;
+      const accentReset = !!input.accentPhrases && !sameMoras(input.accentPhrases, query.accent_phrases);
+      if (input.accentPhrases && !accentReset) query.accent_phrases = input.accentPhrases;
       const upspeak = options.enableInterrogativeUpspeak ?? preset.enableInterrogativeUpspeak ?? AUDIO_DEFAULTS.enableInterrogativeUpspeak;
       const audioResponse = await engine(`/synthesis?speaker=${styleId}&enable_interrogative_upspeak=${upspeak}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(query),
       }, 90_000);
       const audio = Buffer.from(await audioResponse.arrayBuffer());
       res.writeHead(200, { 'Content-Type': 'audio/wav', 'Content-Length': audio.length,
+        'X-Accent-Reset': accentReset ? '1' : '0',
         'Content-Disposition': `attachment; filename="voice-${randomUUID().slice(0, 8)}.wav"`, 'Cache-Control': 'no-store' });
       res.end(audio);
       return;
