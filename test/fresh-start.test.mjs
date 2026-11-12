@@ -2,13 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { cp, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 async function listen(server) { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); return server.address().port; }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 test('a fresh source copy starts without dependencies or user files', async () => {
+  const launcher = await readFile(path.join(process.cwd(), '起動.cmd'));
+  assert.ok(launcher.every(byte => byte < 128), 'Windows cmd script must use ASCII to avoid code page parsing errors');
   const dataRoot = path.join(process.cwd(), 'data');
   await mkdir(dataRoot, { recursive: true });
   const copy = await mkdtemp(path.join(dataRoot, 'fresh-source-'));
