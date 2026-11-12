@@ -1,0 +1,27 @@
+.mode-tabs { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid #dce1e5; }
+.mode-tab { border: 0; border-bottom: 3px solid transparent; background: transparent; color: #53616d; padding: 10px 16px; cursor: pointer; font-weight: 600; }
+.mode-tab.active { border-color: #315f8b; color: #202a33; }
+#dictionaryView h2, #singingView h2 { margin: 0 0 8px; font-size: 19px; }
+#dictionaryMessage, #singingMessage { color: #455361; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.dictionary-list { display: grid; gap: 8px; margin: 18px 0 28px; }
+.dictionary-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid #dfe4e8; border-radius: 10px; padding: 10px 12px; }
+.dictionary-item p { margin: 4px 0 0; color: #687581; font-size: 12px; }
+.dictionary-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.dictionary-actions button { min-height: 34px; padding: 5px 10px; }
+.subform { border-top: 1px solid #e1e5e8; padding-top: 18px; }
+.subform h3, .singing-heading h3 { margin: 0 0 16px; font-size: 16px; }
+.subform small { display: block; color: #687581; font-size: 11px; margin-top: 5px; }
+.singing-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 10px; }
+.singing-heading h3 { margin: 0; }
+.note-list { display: grid; gap: 8px; }
+.note-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; border: 1px solid #dfe4e8; border-radius: 10px; padding: 10px; }
+.note-row label { margin: 0; font-size: 12px; }
+.note-row input, .note-row select { margin-top: 5px; }
+.note-row button { min-height: 42px; }
+.singing-output { margin-top: 18px; }
+.checkbox-field { align-self: center; margin: 0; }
+@media (max-width: 600px) {
+  .dictionary-item { align-items: flex-start; flex-direction: column; }
+  .note-row { grid-template-columns: 1fr 1fr; }
+  .note-row button { grid-column: 1 / -1; }
+}

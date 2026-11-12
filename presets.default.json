@@ -3,15 +3,15 @@
     "id": "hina",
     "name": "ヒナ",
     "enabled": true,
-    "styleId": 5,
-    "defaultText": "風紀委員長のヒナ。私の名前は知ってると思うけど...．よろしく．",
-    "credit": "",
+    "styleId": 14,
+    "defaultText": "風紀委員長のヒナ。私の名前は知ってると思うけど...。よろしく。",
+    "credit": "VOICEVOX:冥鳴ひまり",
     "termsUrl": "",
     "speedScale": 0.89,
     "pitchScale": -0.06,
     "intonationScale": 1.69,
     "volumeScale": 1.45,
-    "prePhonemeLength": 1.29,
+    "prePhonemeLength": 0,
     "postPhonemeLength": 0
   }
 ]

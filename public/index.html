@@ -3,17 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>VOICEVOX 読み上げ</title>
+  <title>VOICEVOX ローカル音声</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/parameters.css">
+  <link rel="stylesheet" href="/extras.css">
 </head>
 <body>
   <div class="app-shell">
     <header class="app-header">
-      <h1>VOICEVOX 読み上げ</h1>
+      <h1>VOICEVOX ローカル音声</h1>
     </header>
 
     <main>
+      <nav class="mode-tabs" aria-label="機能を選択">
+        <button class="mode-tab active" type="button" data-mode="speech" aria-current="page">読み上げ</button>
+        <button class="mode-tab" type="button" data-mode="dictionary">辞書</button>
+        <button class="mode-tab" type="button" data-mode="singing">歌唱</button>
+      </nav>
       <form id="form" class="panel" aria-label="音声生成">
         <div class="field">
           <label for="preset">プリセット</label>
@@ -40,7 +46,17 @@
             <div class="control"><label for="volumeScale">音量 <output id="volumeScaleValue"></output></label><input id="volumeScale" type="range" min="0" max="2" step="0.01"></div>
             <div class="control"><label for="prePhonemeLength">前の無音（秒） <output id="prePhonemeLengthValue"></output></label><input id="prePhonemeLength" type="range" min="0" max="2" step="0.01"></div>
             <div class="control"><label for="postPhonemeLength">後の無音（秒） <output id="postPhonemeLengthValue"></output></label><input id="postPhonemeLength" type="range" min="0" max="2" step="0.01"></div>
+            <div class="control"><label for="pauseLengthScale">句読点の間 <output id="pauseLengthScaleValue"></output></label><input id="pauseLengthScale" type="range" min="0" max="2" step="0.01"></div>
           </div>
+          <details class="output-options">
+            <summary>音声出力の設定</summary>
+            <div class="output-options-content">
+              <div class="field"><label for="outputSamplingRate">サンプリングレート</label><select id="outputSamplingRate"><option value="24000">24 kHz</option><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option></select></div>
+              <div class="field"><label for="pauseLength">句読点の間を固定（秒・任意）</label><input id="pauseLength" type="number" min="0" max="5" step="any" placeholder="自動"></div>
+              <label class="check-control"><input id="outputStereo" type="checkbox"> ステレオで出力</label>
+              <label class="check-control"><input id="enableInterrogativeUpspeak" type="checkbox"> 疑問文の語尾を上げる</label>
+            </div>
+          </details>
           <button id="saveAsPreset" class="secondary save-preset" type="button">現在の設定を新しいプリセットとして保存</button>
         </section>
 
@@ -48,6 +64,19 @@
           <div class="field-heading"><label for="text">読み上げる文章</label><span id="count">0 / 500</span></div>
           <textarea id="text" maxlength="500" placeholder="文章を入力" required></textarea>
         </div>
+        <div class="field reading-field">
+          <label for="readingText">読み替え（任意）</label>
+          <input id="readingText" type="text" maxlength="500" placeholder="読みが違うとき、実際に読ませたい表記を入力">
+        </div>
+
+        <section id="accentPanel" class="accent-panel" hidden aria-labelledby="accentTitle">
+          <div class="accent-heading">
+            <div><h2 id="accentTitle">アクセント・音の調整</h2><p>文章を解析すると、アクセント位置、音ごとの高さと長さを調整できます。</p></div>
+            <button id="analyze" class="secondary" type="button">文章を解析</button>
+          </div>
+          <p id="accentMessage" role="status" aria-live="polite"></p>
+          <div id="accentPhrases"></div>
+        </section>
 
         <div class="form-actions">
           <button id="generate" class="primary" type="submit">音声を生成</button>
@@ -61,6 +90,45 @@
           <button id="saveWav" class="secondary" type="button">WAVを保存</button>
         </section>
       </form>
+
+      <section id="dictionaryView" class="panel" hidden aria-labelledby="dictionaryTitle">
+        <h2 id="dictionaryTitle">単語辞書</h2>
+        <p class="fine">読み上げで使う単語の読みとアクセントを登録します。保存先はアプリ直下の dictionary.json です。</p>
+        <p id="dictionaryMessage" role="status" aria-live="polite"></p>
+        <div id="dictionaryList" class="dictionary-list"></div>
+        <form id="dictionaryForm" class="subform">
+          <h3 id="dictionaryFormTitle">単語を追加</h3>
+          <div class="grid">
+            <div class="field"><label for="wordSurface">表記</label><input id="wordSurface" required maxlength="100" placeholder="例: VOICEVOX"></div>
+            <div class="field"><label for="wordPronunciation">読み（全角カタカナ）</label><input id="wordPronunciation" required placeholder="例: ボイスボックス"></div>
+            <div class="field"><label for="wordAccent">アクセント位置</label><input id="wordAccent" type="number" min="0" max="100" value="0" required><small>0 は平板。1 以降は何拍目で下がるか。</small></div>
+            <div class="field"><label for="wordType">品詞</label><select id="wordType"><option value="PROPER_NOUN">固有名詞</option><option value="COMMON_NOUN">普通名詞</option><option value="VERB">動詞</option><option value="ADJECTIVE">形容詞</option><option value="SUFFIX">接尾辞</option></select></div>
+            <div class="field"><label for="wordPriority">優先度（0〜10）</label><input id="wordPriority" type="number" min="0" max="10" value="5" required></div>
+          </div>
+          <div class="form-actions"><button class="primary" type="submit">単語を保存</button><button id="cancelWordEdit" class="secondary" type="button" hidden>編集をやめる</button></div>
+        </form>
+      </section>
+
+      <section id="singingView" class="panel" hidden aria-labelledby="singingTitle">
+        <h2 id="singingTitle">歌唱</h2>
+        <p class="fine">１音符に１拍分の歌詞を入れます。歌唱対応の音声ライブラリが必要です。</p>
+        <p id="singingMessage" role="status" aria-live="polite"></p>
+        <form id="singingForm">
+          <div class="grid">
+            <div class="field"><label for="teacherStyle">音程・歌詞を解析するスタイル</label><select id="teacherStyle" required></select></div>
+            <div class="field"><label for="singerStyle">歌声スタイル</label><select id="singerStyle" required></select></div>
+          </div>
+          <div class="singing-heading"><h3>音符</h3><button id="addNote" class="secondary" type="button">音符を追加</button></div>
+          <div id="noteList" class="note-list"></div>
+          <div class="grid singing-output">
+            <div class="field"><label for="singVolume">音量</label><input id="singVolume" type="number" min="0" max="2" step="0.05" value="1"></div>
+            <div class="field"><label for="singRate">サンプリングレート</label><select id="singRate"><option value="24000">24,000 Hz</option><option value="44100">44,100 Hz</option><option value="48000">48,000 Hz</option></select></div>
+            <label class="checkbox-field"><input id="singStereo" type="checkbox"> ステレオ</label>
+          </div>
+          <div class="form-actions"><button id="generateSong" class="primary" type="submit">歌声を生成</button></div>
+        </form>
+        <div id="songResult" class="result" hidden><label for="songPlayer">生成した歌声</label><audio id="songPlayer" controls></audio><button id="saveSongWav" class="secondary" type="button">WAVを保存</button></div>
+      </section>
 
       <section class="panel credit-panel" aria-labelledby="creditTitle">
         <h2 id="creditTitle">クレジット・利用規約</h2>
@@ -90,5 +158,6 @@
   </dialog>
 
   <script type="module" src="/app.js"></script>
+  <script type="module" src="/extras.js"></script>
 </body>
 </html>

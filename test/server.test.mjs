@@ -41,13 +41,20 @@ test('packaged presets and personal voice choices persist without reviving old u
 test('local API loads preset JSON, saves personal presets, synthesizes audio, and reports an unavailable engine', async () => {
   let receivedQuery;
   let querySpeaker;
+  let queryText;
   let synthesisSpeaker;
+  let synthesisUrl;
   const packaged = initialPresets.find(preset => preset.enabled && validPreset(preset));
   assert.ok(packaged, 'a configured packaged preset exists');
+  const phrase = { moras: [
+    { text: 'ア', consonant: null, consonant_length: null, vowel: 'a', vowel_length: 0.2, pitch: 5 },
+    { text: 'イ', consonant: null, consonant_length: null, vowel: 'i', vowel_length: 0.2, pitch: 5.5 },
+  ], accent: 1, pause_mora: null, is_interrogative: false };
   const mock = http.createServer(async (req, res) => {
     if (req.url === '/speakers') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify([{ name: '配布話者', styles: [{ id: packaged.styleId, name: '通常' }] }, { name: '別話者', styles: [{ id: 99, name: '通常' }] }])); return; }
-    if (req.url.startsWith('/audio_query')) { querySpeaker = new URL(req.url, 'http://127.0.0.1').searchParams.get('speaker'); res.setHeader('Content-Type', 'application/json'); res.end('{}'); return; }
-    if (req.url.startsWith('/synthesis')) { synthesisSpeaker = new URL(req.url, 'http://127.0.0.1').searchParams.get('speaker'); const chunks = []; for await (const chunk of req) chunks.push(chunk); receivedQuery = JSON.parse(Buffer.concat(chunks)); res.setHeader('Content-Type', 'audio/wav'); res.end(Buffer.from('RIFFtestWAVE')); return; }
+    if (req.url.startsWith('/audio_query')) { const url = new URL(req.url, 'http://127.0.0.1'); querySpeaker = url.searchParams.get('speaker'); queryText = url.searchParams.get('text'); res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ accent_phrases: [phrase], outputSamplingRate: 24000, outputStereo: false })); return; }
+    if (req.url.startsWith('/mora_data')) { const chunks = []; for await (const chunk of req) chunks.push(chunk); const changed = JSON.parse(Buffer.concat(chunks))[0]; changed.moras[0].pitch = 6; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify([changed])); return; }
+    if (req.url.startsWith('/synthesis')) { synthesisUrl = req.url; synthesisSpeaker = new URL(req.url, 'http://127.0.0.1').searchParams.get('speaker'); const chunks = []; for await (const chunk of req) chunks.push(chunk); receivedQuery = JSON.parse(Buffer.concat(chunks)); res.setHeader('Content-Type', 'audio/wav'); res.end(Buffer.from('RIFFtestWAVE')); return; }
     if (req.url === '/version') { res.end('0.25'); return; }
     res.writeHead(404).end();
   });
@@ -73,11 +80,25 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     assert.equal(publicList.presets.find(item => item.id === packaged.id).defaultText, packaged.defaultText ?? null);
     assert.equal(publicList.presets.find(item => item.id === preset.id).defaultText, null);
     assert.equal(publicList.presets.find(item => item.id === preset.id).sourcePresetId, packaged.id);
+    const analysis = await fetch(base + '/api/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: packaged.id, styleId: 99, text: '別表記', readingText: 'あい' }) });
+    assert.equal(analysis.status, 200);
+    assert.equal(queryText, 'あい');
+    const analyzedPhrase = (await analysis.json()).accentPhrases[0];
+    assert.equal(analyzedPhrase.accent, 1);
+    analyzedPhrase.accent = 2;
+    const recalculated = await fetch(base + '/api/mora-data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: packaged.id, styleId: 99, accentPhrase: analyzedPhrase }) });
+    assert.equal(recalculated.status, 200);
+    const editedPhrase = (await recalculated.json()).accentPhrase;
+    assert.equal(editedPhrase.moras[0].pitch, 6);
+    editedPhrase.moras[1].pitch = 7.25;
     const override = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: packaged.id, styleId: 99, text: '話者を変更' }) });
     assert.equal(override.status, 200);
     assert.equal(querySpeaker, '99');
     assert.equal(synthesisSpeaker, '99');
-    const wav = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: preset.id, text: 'こんにちは' }) });
+    const wav = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      presetId: preset.id, text: '別表記', readingText: 'あい', accentPhrases: [editedPhrase], parameters: { pauseLengthScale: 1.5 },
+      options: { outputSamplingRate: 48000, outputStereo: true, enableInterrogativeUpspeak: false, pauseLength: 0.35 },
+    }) });
     assert.equal(wav.status, 200);
     assert.equal(wav.headers.get('content-type'), 'audio/wav');
     const audio = Buffer.from(await wav.arrayBuffer());
@@ -87,6 +108,17 @@ test('local API loads preset JSON, saves personal presets, synthesizes audio, an
     assert.equal(path.dirname(wavPath), dir);
     assert.deepEqual(await readFile(wavPath), audio);
     assert.equal(receivedQuery.speedScale, 1.2);
+    assert.equal(receivedQuery.pauseLengthScale, 1.5);
+    assert.equal(receivedQuery.outputSamplingRate, 48000);
+    assert.equal(receivedQuery.outputStereo, true);
+    assert.equal(receivedQuery.pauseLength, 0.35);
+    assert.equal(queryText, 'あい');
+    assert.equal(receivedQuery.accent_phrases[0].moras[1].pitch, 7.25);
+    assert.match(synthesisUrl, /enable_interrogative_upspeak=false/);
+    const badAccent = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      presetId: preset.id, text: 'あい', accentPhrases: [{ ...editedPhrase, accent: 3 }],
+    }) });
+    assert.equal(badAccent.status, 400);
     assert.equal(querySpeaker, '99');
     assert.equal(synthesisSpeaker, '99');
     const unknownStyle = await fetch(base + '/api/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presetId: preset.id, styleId: 999, text: '話者不明' }) });

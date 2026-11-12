@@ -23,6 +23,31 @@
   accent-color: #315f8b;
 }
 .save-preset { margin-top: 10px; }
+.output-options { margin: 8px 0 14px; }
+.output-options summary { cursor: pointer; font-size: 13px; font-weight: 600; color: #34495d; }
+.output-options-content { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 22px; padding-top: 14px; }
+.output-options-content .field { min-width: 180px; margin: 0; }
+.check-control { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; font-weight: 500; }
+.accent-panel { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e5e8; }
+.accent-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.accent-heading h2 { margin: 0; font-size: 15px; }
+.accent-heading p { margin: 6px 0 0; color: #687581; font-size: 12px; line-height: 1.5; }
+#accentMessage { margin: 10px 0; color: #455361; font-size: 13px; }
+#accentMessage:empty { display: none; }
+.phrase { margin: 14px 0; padding: 14px; border: 1px solid #dfe4e8; border-radius: 12px; }
+.phrase summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+.phrase-content { margin-top: 14px; }
+.phrase-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 18px; }
+.phrase-controls > label { min-width: 160px; margin: 0; }
+.phrase-controls select, .phrase-controls input[type="number"] { margin-top: 5px; }
+.mora-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 9px; margin-top: 14px; }
+.mora-card { padding: 10px; border: 1px solid #e1e5e8; border-radius: 10px; background: #fafbfc; }
+.mora-card strong { display: block; margin-bottom: 10px; font-size: 15px; }
+.mora-card label { margin-top: 8px; font-size: 12px; }
+.mora-card label output { float: right; font-variant-numeric: tabular-nums; }
+.mora-card input[type="range"] { width: 100%; accent-color: #315f8b; }
+.mora-card input[type="number"] { padding: 7px 8px; }
 @media (max-width: 600px) {
   .parameter-grid { grid-template-columns: 1fr; }
+  .accent-heading { flex-direction: column; }
 }
